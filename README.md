@@ -12,7 +12,7 @@ All requests and predictions are persisted to a PostgreSQL database via SQLModel
 ## Important: Train the ML Models First (Required)
 
 This repository expects pre-trained `.pkl` files to exist under `saved_models/`.  
-Before you run the API, you **must** train the models so the application can load the `.pkl` artifacts at startup/runtime.
+Before running the API, you **must** train the models so the application can load the `.pkl` artifacts at runtime.
 
 Training scripts:
 - `train_iris_model.py`
@@ -44,25 +44,36 @@ Generated artifacts:
 ## Features
 
 ### 1) Product Review LLM (GenAI)
+
 Analyzes a free-text review and returns structured output such as:
 - rating (1–5)
-- sentiment (positive/negative)
-- key points (short bullet-like phrases)
+- sentiment (positive / negative)
+- key points (short extracted phrases)
 
-Also stores the request + result into PostgreSQL.
+The request and analysis result are persisted to PostgreSQL.
+
+---
 
 ### 2) Iris Prediction (ML)
-KNN-based classifier that predicts Iris species from:
-- sepal length/width
-- petal length/width
 
-Also logs inputs + prediction into PostgreSQL.
+KNN-based classifier that predicts Iris species using:
+- sepal length
+- sepal width
+- petal length
+- petal width
+
+Input features and predictions are logged to PostgreSQL.
+
+---
 
 ### 3) Advertising Prediction (ML)
-Random Forest regression model predicting sales based on:
-- TV, Radio, Newspaper spend
 
-Also logs inputs + prediction into PostgreSQL.
+Random Forest regression model that predicts sales based on:
+- TV budget
+- Radio budget
+- Newspaper budget
+
+Predictions are stored in PostgreSQL.
 
 ---
 
@@ -70,9 +81,9 @@ Also logs inputs + prediction into PostgreSQL.
 
 - **API:** FastAPI, Uvicorn
 - **Database:** PostgreSQL, SQLModel
-- **ML:** scikit-learn, pandas, joblib
+- **Machine Learning:** scikit-learn, pandas, joblib
 - **LLM:** LangChain, Google GenAI (Gemini)
-- **DB runtime:** Docker (recommended for local PostgreSQL)
+- **Database Runtime:** Docker
 
 ---
 
@@ -106,9 +117,9 @@ Also logs inputs + prediction into PostgreSQL.
 
 ## Prerequisites
 
-* Python 3.10+ (recommended: 3.12, as your project uses `cpython-312` caches)
+* Python 3.10+ (recommended: Python 3.12)
 * Docker (for PostgreSQL)
-* A Google GenAI API key (only required for the Product Review LLM endpoint)
+* Google GenAI API key (required only for Product Review LLM)
 
 ---
 
@@ -121,6 +132,8 @@ git clone https://github.com/oguztoy8/ML-LLM-FastAPI-PSQL.git
 cd ML-LLM-FastAPI-PSQL
 ```
 
+---
+
 ### 2) Create and activate a virtual environment
 
 ```bash
@@ -129,9 +142,11 @@ python -m venv venv
 # Windows (PowerShell)
 venv\Scripts\Activate.ps1
 
-# Linux/Mac
+# Linux / macOS
 source venv/bin/activate
 ```
+
+---
 
 ### 3) Install dependencies
 
@@ -139,9 +154,9 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### 4) Start PostgreSQL with Docker
+---
 
-Example command (adjust credentials if you want):
+### 4) Start PostgreSQL with Docker
 
 ```bash
 docker run --rm -d \
@@ -153,28 +168,34 @@ docker run --rm -d \
   postgres:15
 ```
 
+---
+
 ### 5) Create a `.env` file
 
-Create a `.env` file in the project root:
+Create a `.env` file in the project root directory:
 
 ```env
-GOOGLE_API_KEY="your_google_api_key_here"
+GOOGLE_API_KEY=your_google_api_key_here
 SQLALCHEMY_DATABASE_URL=postgresql+psycopg2://train:sifre123@localhost:5432/traindb
 ```
 
 Notes:
 
-* `GOOGLE_API_KEY` is required for Product Review LLM requests.
-* `SQLALCHEMY_DATABASE_URL` must match your PostgreSQL credentials/host/port.
+* `GOOGLE_API_KEY` is required only for the LLM endpoint
+* Database credentials must match the Docker configuration
+
+---
 
 ### 6) Train the ML models (Required)
-
-This step creates the `.pkl` files under `saved_models/`.
 
 ```bash
 python train_iris_model.py
 python train_advertising_model.py
 ```
+
+This step generates the `.pkl` files under `saved_models/`.
+
+---
 
 ### 7) Run the API
 
@@ -182,7 +203,7 @@ python train_advertising_model.py
 uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
-Open Swagger UI:
+Swagger UI:
 
 * [http://localhost:8000/docs](http://localhost:8000/docs)
 
@@ -194,8 +215,6 @@ Open Swagger UI:
 
 * **POST** `/product-review-llm/chat`
 
-Example request:
-
 ```bash
 curl -X POST "http://localhost:8000/product-review-llm/chat" \
   -H "Content-Type: application/json" \
@@ -206,11 +225,11 @@ curl -X POST "http://localhost:8000/product-review-llm/chat" \
   }'
 ```
 
+---
+
 ### Iris Prediction
 
 * **POST** `/iris/prediction/iris`
-
-Example request:
 
 ```bash
 curl -X POST "http://localhost:8000/iris/prediction/iris" \
@@ -223,11 +242,11 @@ curl -X POST "http://localhost:8000/iris/prediction/iris" \
   }'
 ```
 
+---
+
 ### Advertising Prediction
 
 * **POST** `/advertising/prediction/advertising`
-
-Example request:
 
 ```bash
 curl -X POST "http://localhost:8000/advertising/prediction/advertising" \
@@ -243,57 +262,53 @@ curl -X POST "http://localhost:8000/advertising/prediction/advertising" \
 
 ## Database Persistence
 
-The application creates tables automatically on startup (if configured that way in `main.py/database.py`).
+Tables are created automatically on application startup.
 
-Typical tables in this project:
+Typical tables:
 
 * `iris`
-  Stores Iris feature inputs, predicted label, prediction timestamp, and client IP.
 * `advertising`
-  Stores TV/Radio/Newspaper inputs, predicted sales, prediction timestamp, and client IP.
 * `products_review_rates`
-  Stores user info, product, original review, extracted rating/sentiment/key points, and created timestamp.
+
+Each table stores inputs, predictions, timestamps, and client metadata.
 
 ---
 
-## Common Issues / Troubleshooting
+## Common Issues
 
-### 1) “File not found” for `.pkl`
+### Missing `.pkl` files
 
-Cause: Models were not trained yet.
-Fix:
+Run:
 
 ```bash
 python train_iris_model.py
 python train_advertising_model.py
 ```
 
-### 2) LLM endpoint fails with authentication error
+### LLM authentication error
 
-Cause: Missing or invalid `GOOGLE_API_KEY`.
-Fix: Set the key in `.env` and restart the server.
+Ensure `GOOGLE_API_KEY` is set correctly in `.env`.
 
-### 3) Database connection errors
+### Database connection error
 
-Cause: PostgreSQL not running or wrong `SQLALCHEMY_DATABASE_URL`.
-Fix:
+Verify:
 
-* Ensure Docker container is running:
+```bash
+docker ps
+```
 
-  ```bash
-  docker ps
-  ```
-* Verify `.env` connection string matches your credentials/port.
+and check `SQLALCHEMY_DATABASE_URL`.
 
 ---
 
 ## Notes
 
-* Do not commit your `.env` file.
-* If you change model filenames or paths, update the loading logic accordingly (where the `.pkl` files are read).
+* Do not commit the `.env` file
+* Update model loading paths if `.pkl` filenames change
+
+```
 
 ---
 
 
-
-
+```
