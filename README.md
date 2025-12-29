@@ -1,4 +1,4 @@
-````md
+
 # ML-LLM-FastAPI-PSQL
 
 A FastAPI project that serves:
@@ -139,9 +139,12 @@ cd ML-LLM-FastAPI-PSQL
 ```bash
 python -m venv venv
 
+```bash
 # Windows (PowerShell)
 venv\Scripts\Activate.ps1
+```
 
+```bash
 # Linux / macOS
 source venv/bin/activate
 ```
@@ -278,26 +281,26 @@ Each table stores inputs, predictions, timestamps, and client metadata.
 
 ### Missing `.pkl` files
 
-Run:
-
 ```bash
 python train_iris_model.py
 python train_advertising_model.py
 ```
 
+---
+
 ### LLM authentication error
 
 Ensure `GOOGLE_API_KEY` is set correctly in `.env`.
 
-### Database connection error
+---
 
-Verify:
+### Database connection error
 
 ```bash
 docker ps
 ```
 
-and check `SQLALCHEMY_DATABASE_URL`.
+Verify `SQLALCHEMY_DATABASE_URL`.
 
 ---
 
@@ -307,8 +310,4 @@ and check `SQLALCHEMY_DATABASE_URL`.
 * Update model loading paths if `.pkl` filenames change
 
 ```
-
----
-
-
 ```
