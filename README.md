@@ -190,7 +190,7 @@ Notes:
 ---
 
 ### 6) Train the ML models (Required)
-
+Create folder **saved_models**
 ```bash
 python train_iris_model.py
 python train_advertising_model.py
